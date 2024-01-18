@@ -2,14 +2,12 @@
 
 namespace App\Entity;
 
-use App\Repository\TaskRepository;
-use Doctrine\Common\Collections\ArrayCollection;
-use Doctrine\Common\Collections\Collection;
+use App\Repository\ProjectRepository;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Validator\Constraints as Assert;
 
-#[ORM\Entity(repositoryClass: TaskRepository::class)]
-class Task
+#[ORM\Entity(repositoryClass: ProjectRepository::class)]
+class Project
 {
     #[ORM\Id]
     #[ORM\GeneratedValue]
@@ -27,18 +25,10 @@ class Task
     private ?string $title = null;
 
     #[ORM\Column]
-    #[Assert\NotNull(message: 'is_done cannot be null')]
-    private ?bool $is_done = null;
-
-    #[ORM\Column(type: 'datetime_immutable')]
     private ?\DateTimeImmutable $created_at = null;
 
-    #[ORM\Column(type: 'datetime_immutable')]
+    #[ORM\Column]
     private ?\DateTimeImmutable $updated_at = null;
-
-    #[ORM\ManyToOne(targetEntity: Project::class)]
-    #[ORM\JoinColumn(name: 'project_id', referencedColumnName: 'id', nullable: true)]
-    private ?Project $project = null;
 
     public function getId(): ?int
     {
@@ -53,18 +43,6 @@ class Task
     public function setTitle(string $title): static
     {
         $this->title = $title;
-
-        return $this;
-    }
-
-    public function isIsDone(): ?bool
-    {
-        return $this->is_done;
-    }
-
-    public function setIsDone(bool $is_done): static
-    {
-        $this->is_done = $is_done;
 
         return $this;
     }
@@ -89,18 +67,6 @@ class Task
     public function setUpdatedAt(\DateTimeImmutable $updated_at): static
     {
         $this->updated_at = $updated_at;
-
-        return $this;
-    }
-
-    public function getProject(): ?Project
-    {
-        return $this->project;
-    }
-
-    public function setProject(?Project $project): static
-    {
-        $this->project = $project;
 
         return $this;
     }

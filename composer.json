@@ -10,6 +10,7 @@
         "doctrine/doctrine-bundle": "^2.11",
         "doctrine/doctrine-migrations-bundle": "^3.3",
         "doctrine/orm": "^2.17",
+        "lexik/jwt-authentication-bundle": "^2.18",
         "nelmio/cors-bundle": "^2.4",
         "paragonie/sodium_compat": "^1.20",
         "symfony/console": "6.4.*",
@@ -17,6 +18,8 @@
         "symfony/flex": "^2",
         "symfony/framework-bundle": "6.4.*",
         "symfony/runtime": "6.4.*",
+        "symfony/security-bundle": "6.4.*",
+        "symfony/security-core": "6.4.*",
         "symfony/validator": "6.4.*",
         "symfony/yaml": "6.4.*"
     },

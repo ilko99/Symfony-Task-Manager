@@ -3,6 +3,7 @@
 namespace App\Service;
 
 use App\Entity\Task;
+use App\Repository\ProjectRepository;
 use App\Repository\TaskRepository;
 use App\Service\Interface\TaskServiceInterface;
 use Doctrine\ORM\EntityManagerInterface;
@@ -13,10 +14,13 @@ class TaskService implements TaskServiceInterface
 
     private $taskRepository;
 
-    public function __construct(EntityManagerInterface $entityManager, TaskRepository $taskRepository)
+    private $projectRepository;
+
+    public function __construct(EntityManagerInterface $entityManager, TaskRepository $taskRepository, ProjectRepository $projectRepository)
     {
         $this->entityManager = $entityManager;
         $this->taskRepository = $taskRepository;
+        $this->projectRepository = $projectRepository;
     }
 
     public function getAllTasks(): array
@@ -30,6 +34,7 @@ class TaskService implements TaskServiceInterface
                     'title' => $task->getTitle(),
                     'is_done' => $task->isIsDone(),
                     'created_at' => $task->getCreatedAt() ? $task->getCreatedAt()->format('Y-m-d H:i:s') : null,
+                    'project_id' => $task->getProject() ? $task->getProject()->getId() : null,
                 ];
             }, $tasks);
         } catch (\Exception $e) {
@@ -48,6 +53,13 @@ class TaskService implements TaskServiceInterface
         $now = new \DateTimeImmutable();
         $task->setCreatedAt($now);
         $task->setUpdatedAt($now);
+
+        if (isset($apiTask['project_id'])) {
+            $project = $this->projectRepository->find($apiTask['project_id']);
+            if ($project) {
+                $task->setProject($project);
+            }
+        }
 
         try {
             $this->entityManager->persist($task);
@@ -81,6 +93,14 @@ class TaskService implements TaskServiceInterface
         if (isset($taskData['is_done']))
         {
             $task->setIsDone($taskData['is_done']);
+        }
+
+        if (isset($taskData['project_id']))
+        {
+            $project = $this->projectRepository->find($taskData['project_id']);
+            if ($project) {
+                $task->setProject($project);
+            }
         }
 
         $task->setUpdatedAt(new \DateTimeImmutable());

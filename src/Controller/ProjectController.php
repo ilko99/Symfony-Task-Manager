@@ -2,99 +2,100 @@
 
 namespace App\Controller;
 
-use App\Entity\Task;
-use App\Service\TaskService;
+use App\Entity\Project;
+use App\Service\Interface\ProjectServiceInterface;
 use \Symfony\Component\HttpFoundation\Request;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
-use Symfony\Component\Validator\Constraints\Json;
 
-class TaskController extends AbstractController
+class ProjectController extends AbstractController
 {
+    private ProjectServiceInterface $projectService;
 
-    private TaskService $taskService;
-
-    public function __construct(TaskService $taskService)
+    public function __construct(ProjectServiceInterface $projectService)
     {
-        $this->taskService = $taskService;
+        $this->projectService = $projectService;
     }
-
-    #[Route('/api/tasks', name: 'app_tasks', methods: ['GET'])]
+    #[Route('/api/projects', name: 'app_project', methods: ['GET'])]
     public function index(): JsonResponse
     {
-      $tasksArray = $this->taskService->getAllTasks();
+      $projects = $this->projectService->getAll();
 
       return $this->json([
-          'data' => $tasksArray
+          'data' => $projects
       ]);
     }
 
-
-    #[Route('/api/tasks', name: 'app_store_tasks', methods: ['POST'])]
+    #[Route('/api/projects', name: 'app_store_project', methods: ['POST'])]
     public function create(Request $request): JsonResponse
     {
-        $data = json_decode($request->getContent(), true);
+        $apiData = json_decode($request->getContent(), true);
 
-        if (!isset($data['title'])) {
+        if (!isset($apiData['title'])) {
             return new JsonResponse('Missing parameters', Response::HTTP_BAD_REQUEST);
         }
 
-        try {
-            $task = $this->taskService->createTasks($data);
+        try{
+            $project = $this->projectService->create($apiData);
         } catch (\Exception $e) {
             error_log($e->getMessage());
             return new JsonResponse($e->getMessage(), Response::HTTP_INTERNAL_SERVER_ERROR);
         }
 
-        $taskArray = $this->translateTaskToArray($task);
+        $projectArray = $this->translateProjectToArray($project);
 
         return $this->json([
-            'data' => $taskArray
-    ]);
+            'data' => $projectArray
+        ]);
     }
 
-    #[Route('/api/tasks/{id}', name: 'app_get_task', methods: ['GET'])]
+    #[Route('/api/projects/{id}', name: 'app_get_project', methods: ['GET'])]
     public function show(int $id): JsonResponse
     {
-        $task = $this->taskService->getTask($id);
-
-        $taskArray = $this->translateTaskToArray($task);
-
-        return $this->json([
-            'data' => $taskArray
-        ]);
-    }
-
-    #[Route('/api/tasks/{id}', name: 'app_update_task', methods: ['PUT'])]
-    public function update(int $id, Request $request): JsonResponse
-    {
-        $data = json_decode($request->getContent(), true);
-
-        if (!isset($data['title'])) {
-            return new JsonResponse('Missing parameters', Response::HTTP_BAD_REQUEST);
-        }
-
-        try {
-            $task = $this->taskService->updateTask($id, $data);
+        try{
+            $project = $this->projectService->get($id);
         } catch (\Exception $e) {
             error_log($e->getMessage());
             return new JsonResponse($e->getMessage(), Response::HTTP_INTERNAL_SERVER_ERROR);
         }
 
-        $taskArray = $this->translateTaskToArray($task);
+        $projectArray = $this->translateProjectToArray($project);
 
         return $this->json([
-            'data' => $taskArray
+            'data' => $projectArray
         ]);
     }
 
-    #[Route('/api/tasks/{id}', name: 'app_delete_task', methods: ['DELETE'])]
+    #[Route('/api/projects/{id}', name: 'app_update_project', methods: ['PUT'])]
+    public function update(int $id, Request $request): JsonResponse
+    {
+        $apiData = json_decode($request->getContent(), true);
+
+        if (!isset($apiData['title'])) {
+            return new JsonResponse('Missing parameters', Response::HTTP_BAD_REQUEST);
+        }
+
+        try{
+            $project = $this->projectService->update($id, $apiData);
+        } catch (\Exception $e) {
+            error_log($e->getMessage());
+            return new JsonResponse($e->getMessage(), Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+
+        $projectArray = $this->translateProjectToArray($project);
+
+        return $this->json([
+            'data' => $projectArray
+        ]);
+    }
+
+    #[Route('/api/projects/{id}', name: 'app_delete_project', methods: ['DELETE'])]
     public function destroy(int $id): JsonResponse
     {
-        try {
-            $this->taskService->deleteTask($id);
+        try{
+            $this->projectService->delete($id);
         } catch (\Exception $e) {
             error_log($e->getMessage());
             return new JsonResponse($e->getMessage(), Response::HTTP_INTERNAL_SERVER_ERROR);
@@ -103,16 +104,13 @@ class TaskController extends AbstractController
         return new JsonResponse(null, Response::HTTP_NO_CONTENT);
     }
 
-    private function translateTaskToArray(Task $task): array
+    private function translateProjectToArray(Project $task): array
     {
         return [
             'id' => $task->getId(),
             'title' => $task->getTitle(),
-            'is_done' => $task->isIsDone(),
             'created_at' => $task->getCreatedAt()->format('c'),
             'updated_at' => $task->getUpdatedAt()->format('c'),
-            'project_id' => $task->getProject() ? $task->getProject()->getId() : null,
         ];
     }
-
 }
