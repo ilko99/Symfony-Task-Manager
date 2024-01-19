@@ -112,6 +112,7 @@ class TaskController extends AbstractController
             'created_at' => $task->getCreatedAt()->format('c'),
             'updated_at' => $task->getUpdatedAt()->format('c'),
             'project_id' => $task->getProject() ? $task->getProject()->getId() : null,
+            'creator_id' => $task->getCreator() ? $task->getCreator()->getId() : null,
         ];
     }
 

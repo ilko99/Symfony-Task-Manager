@@ -40,6 +40,10 @@ class Task
     #[ORM\JoinColumn(name: 'project_id', referencedColumnName: 'id', nullable: true)]
     private ?Project $project = null;
 
+    #[ORM\ManyToOne(targetEntity: User::class)]
+    #[ORM\JoinColumn(name: 'creator_id', referencedColumnName: 'id', nullable: true)]
+    private ?User $creator = null;
+
     public function getId(): ?int
     {
         return $this->id;
@@ -101,6 +105,18 @@ class Task
     public function setProject(?Project $project): static
     {
         $this->project = $project;
+
+        return $this;
+    }
+
+    public function getCreator(): ?User
+    {
+        return $this->creator;
+    }
+
+    public function setCreator(?User $creator): static
+    {
+        $this->creator = $creator;
 
         return $this;
     }

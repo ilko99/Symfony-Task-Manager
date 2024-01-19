@@ -21,7 +21,8 @@
         "symfony/security-bundle": "6.4.*",
         "symfony/security-core": "6.4.*",
         "symfony/validator": "6.4.*",
-        "symfony/yaml": "6.4.*"
+        "symfony/yaml": "6.4.*",
+      "ext-cassandra": "*"
     },
     "config": {
         "allow-plugins": {

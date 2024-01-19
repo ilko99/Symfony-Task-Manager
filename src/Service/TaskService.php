@@ -7,6 +7,7 @@ use App\Repository\ProjectRepository;
 use App\Repository\TaskRepository;
 use App\Service\Interface\TaskServiceInterface;
 use Doctrine\ORM\EntityManagerInterface;
+use Symfony\Component\Security\Core\Security;
 
 class TaskService implements TaskServiceInterface
 {
@@ -16,11 +17,14 @@ class TaskService implements TaskServiceInterface
 
     private $projectRepository;
 
-    public function __construct(EntityManagerInterface $entityManager, TaskRepository $taskRepository, ProjectRepository $projectRepository)
+    private $security;
+
+    public function __construct(EntityManagerInterface $entityManager, TaskRepository $taskRepository, ProjectRepository $projectRepository, Security $security)
     {
         $this->entityManager = $entityManager;
         $this->taskRepository = $taskRepository;
         $this->projectRepository = $projectRepository;
+        $this->security = $security;
     }
 
     public function getAllTasks(): array
@@ -35,6 +39,7 @@ class TaskService implements TaskServiceInterface
                     'is_done' => $task->isIsDone(),
                     'created_at' => $task->getCreatedAt() ? $task->getCreatedAt()->format('Y-m-d H:i:s') : null,
                     'project_id' => $task->getProject() ? $task->getProject()->getId() : null,
+                    'creator_id' => $task->getCreator() ? $task->getCreator()->getId() : null,
                 ];
             }, $tasks);
         } catch (\Exception $e) {
@@ -56,10 +61,29 @@ class TaskService implements TaskServiceInterface
 
         if (isset($apiTask['project_id'])) {
             $project = $this->projectRepository->find($apiTask['project_id']);
-            if ($project) {
-                $task->setProject($project);
+            if (!$project) {
+                throw new \Exception('Project not found');
             }
+            $task->setProject($project);
         }
+
+        $user = $this->security->getUser();
+
+        if(!$user){
+            throw new \Exception('User not found or not authenticated');
+        }
+
+        if (!$user instanceof \App\Entity\User) {
+            throw new \Exception('Authenticated user is not a valid User entity');
+        }
+
+        $userId = $user->getId();
+
+        if(!$userId){
+            throw new \Exception('User not found or not authenticated');
+        }
+
+        $task->setCreator($user);
 
         try {
             $this->entityManager->persist($task);
@@ -73,7 +97,14 @@ class TaskService implements TaskServiceInterface
 
     public function getTask(int $id): ?Task
     {
-        return $this->taskRepository->find($id);
+        $task = $this->taskRepository->find($id);
+
+        if(!$task)
+        {
+            throw new \Exception('Task not found');
+        }
+
+        return $task;
     }
 
     public function updateTask(int $id, array $taskData): ?Task
@@ -83,6 +114,16 @@ class TaskService implements TaskServiceInterface
         if (!$task)
         {
          throw new \Exception('Task not found');
+        }
+
+        $user = $this->security->getUser();
+
+        if(!$user){
+            throw new \Exception('User not found or not authenticated');
+        }
+
+        if ($task->getCreator() !== $user) {
+            throw new \Exception('User is not the creator of the task');
         }
 
         if (isset($taskData['title']))
@@ -117,6 +158,16 @@ class TaskService implements TaskServiceInterface
         if(!$task)
         {
             throw new \Exception('Task not found');
+        }
+
+        $user = $this->security->getUser();
+
+        if(!$user){
+            throw new \Exception('User not found or not authenticated');
+        }
+
+        if ($task->getCreator() !== $user) {
+            throw new \Exception('User is not the creator of the task');
         }
 
         $this->entityManager->remove($task);
