@@ -44,7 +44,7 @@ class ProjectController extends AbstractController
             return new JsonResponse($e->getMessage(), Response::HTTP_INTERNAL_SERVER_ERROR);
         }
 
-        $projectArray = $this->translateProjectToArray($project);
+        $projectArray = $this->projectService->create($project);
 
         return $this->json([
             'data' => $projectArray
@@ -76,13 +76,11 @@ class ProjectController extends AbstractController
         }
 
         try{
-            $project = $this->projectService->update($id, $apiData);
+            $projectArray = $this->projectService->update($id, $apiData);
         } catch (\Exception $e) {
             error_log($e->getMessage());
             return new JsonResponse($e->getMessage(), Response::HTTP_INTERNAL_SERVER_ERROR);
         }
-
-        $projectArray = $this->translateProjectToArray($project);
 
         return $this->json([
             'data' => $projectArray

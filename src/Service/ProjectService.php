@@ -29,13 +29,7 @@ class ProjectService implements ProjectServiceInterface
     {
         try{
             $projects = $this->projectRepository->findAll();
-            return array_map(function (Project $project){
-                return [
-                    'id' => $project->getId(),
-                    'title' => $project->getTitle(),
-                    'created_at' => $project->getCreatedAt() ? $project->getCreatedAt()->format('Y-m-d H:i:s') : null,
-                ];
-            }, $projects);
+            return array_map([$this, 'translateProjectToArray'],$projects);
         } catch (\Exception $e) {
             echo $e->getMessage();
             return [];
@@ -43,7 +37,7 @@ class ProjectService implements ProjectServiceInterface
 
     }
 
-    public function create(array $apiProjectData): Project
+    public function create(array $apiProjectData): array
     {
         $project = new Project();
         $project->setTitle($apiProjectData['title'] ?? null);
@@ -59,7 +53,7 @@ class ProjectService implements ProjectServiceInterface
             echo $e->getMessage();
         }
 
-        return $project;
+        return $this->translateProjectToArray($project);
     }
 
     public function get(int $id): array
@@ -75,10 +69,10 @@ class ProjectService implements ProjectServiceInterface
 
         return [
             'project' => $this->translateProjectToArray($project),
-            'tasks' => array_map([$this, 'translateTaskToArray'], $tasks)
+            'tasks' => array_map([$this, 'translateProjectToArray'], $tasks)
         ];
     }
-    public function update(int $id, array $projectData): Project
+    public function update(int $id, array $projectData): array
     {
         $project = $this->projectRepository->find($id);
 
@@ -96,11 +90,17 @@ class ProjectService implements ProjectServiceInterface
 
         $this->entityManager->flush();
 
-        return $project;
+        return $this->translateProjectToArray($project);
     }
 
     public function delete(int $id): void
     {
+        $tasks = $this->taskRepository->findByProjectId($id);
+
+        foreach ($tasks as $task){
+            $this->entityManager->remove($task);
+        }
+
         $project = $this->projectRepository->find($id);
 
         if(!$project)
@@ -122,16 +122,4 @@ class ProjectService implements ProjectServiceInterface
         ];
     }
 
-    private function translateTaskToArray(Task $task): array
-    {
-        return [
-            'id' => $task->getId(),
-            'title' => $task->getTitle(),
-            'is_done' => $task->isIsDone(),
-            'created_at' => $task->getCreatedAt()->format('c'),
-            'updated_at' => $task->getUpdatedAt()->format('c'),
-            'project_id' => $task->getProject() ? $task->getProject()->getId() : null,
-            'creator_id' => $task->getCreator() ? $task->getCreator()->getId() : null,
-        ];
-    }
 }
