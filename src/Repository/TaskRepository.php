@@ -4,7 +4,9 @@ namespace App\Repository;
 
 use App\Entity\Task;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
+use Doctrine\ORM\NonUniqueResultException;
 use Doctrine\Persistence\ManagerRegistry;
+use Psr\Log\LoggerInterface;
 
 /**
  * @extends ServiceEntityRepository<Task>
@@ -16,9 +18,11 @@ use Doctrine\Persistence\ManagerRegistry;
  */
 class TaskRepository extends ServiceEntityRepository
 {
-    public function __construct(ManagerRegistry $registry)
+    private $logger;
+    public function __construct(ManagerRegistry $registry, LoggerInterface $logger)
     {
         parent::__construct($registry, Task::class);
+        $this->logger = $logger;
     }
 
 //    /**
@@ -36,13 +40,17 @@ class TaskRepository extends ServiceEntityRepository
 //        ;
 //    }
 
-//    public function findOneBySomeField($value): ?Task
-//    {
-//        return $this->createQueryBuilder('t')
-//            ->andWhere('t.exampleField = :val')
-//            ->setParameter('val', $value)
-//            ->getQuery()
-//            ->getOneOrNullResult()
-//        ;
-//    }
+    public function findByProjectId($projectId): array
+    {
+        $query = $this->createQueryBuilder('t')
+            ->andWhere('t.project = :projectId')
+            ->setParameter('projectId', $projectId)
+            ->getQuery();
+
+        // Execute the query and get the result
+        $result = $query->getResult();
+
+
+        return $result; // Return the result
+    }
 }

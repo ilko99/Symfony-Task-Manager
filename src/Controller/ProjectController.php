@@ -61,11 +61,9 @@ class ProjectController extends AbstractController
             return new JsonResponse($e->getMessage(), Response::HTTP_INTERNAL_SERVER_ERROR);
         }
 
-        $projectArray = $this->translateProjectToArray($project);
-
-        return $this->json([
-            'data' => $projectArray
-        ]);
+        return new JsonResponse([
+            'data' => $project
+        ], Response::HTTP_OK);
     }
 
     #[Route('/api/projects/{id}', name: 'app_update_project', methods: ['PUT'])]

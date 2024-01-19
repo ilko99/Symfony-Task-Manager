@@ -2,8 +2,11 @@
 
 namespace App\Service;
 use App\Entity\Project;
+use App\Entity\Task;
 use App\Repository\ProjectRepository;
+use App\Repository\TaskRepository;
 use App\Service\Interface\ProjectServiceInterface;
+use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\EntityManagerInterface;
 
 class ProjectService implements ProjectServiceInterface
@@ -13,10 +16,13 @@ class ProjectService implements ProjectServiceInterface
 
     private ProjectRepository $projectRepository;
 
-    public function __construct(EntityManagerInterface $entityManager, ProjectRepository $projectRepository)
+    private TaskRepository $taskRepository;
+
+    public function __construct(EntityManagerInterface $entityManager, ProjectRepository $projectRepository, TaskRepository $taskRepository)
     {
         $this->entityManager = $entityManager;
         $this->projectRepository = $projectRepository;
+        $this->taskRepository = $taskRepository;
     }
 
     public function getAll(): array
@@ -56,11 +62,22 @@ class ProjectService implements ProjectServiceInterface
         return $project;
     }
 
-    public function get(int $id): Project
+    public function get(int $id): array
     {
-        return $this->entityManager->getRepository(Project::class)->find($id);
-    }
+        $project = $this->entityManager->getRepository(Project::class)->find($id);
 
+        if(!$project)
+        {
+            throw new \Exception('Project not found');
+        }
+
+        $tasks = $this->taskRepository->findByProjectId($project->getId());
+
+        return [
+            'project' => $this->translateProjectToArray($project),
+            'tasks' => array_map([$this, 'translateTaskToArray'], $tasks)
+        ];
+    }
     public function update(int $id, array $projectData): Project
     {
         $project = $this->projectRepository->find($id);
@@ -93,5 +110,28 @@ class ProjectService implements ProjectServiceInterface
 
         $this->entityManager->remove($project);
         $this->entityManager->flush();
+    }
+
+    private function translateProjectToArray(Project $task): array
+    {
+        return [
+            'id' => $task->getId(),
+            'title' => $task->getTitle(),
+            'created_at' => $task->getCreatedAt()->format('c'),
+            'updated_at' => $task->getUpdatedAt()->format('c'),
+        ];
+    }
+
+    private function translateTaskToArray(Task $task): array
+    {
+        return [
+            'id' => $task->getId(),
+            'title' => $task->getTitle(),
+            'is_done' => $task->isIsDone(),
+            'created_at' => $task->getCreatedAt()->format('c'),
+            'updated_at' => $task->getUpdatedAt()->format('c'),
+            'project_id' => $task->getProject() ? $task->getProject()->getId() : null,
+            'creator_id' => $task->getCreator() ? $task->getCreator()->getId() : null,
+        ];
     }
 }
