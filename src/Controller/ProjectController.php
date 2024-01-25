@@ -2,8 +2,8 @@
 
 namespace App\Controller;
 
-use App\Entity\Project;
 use App\Service\Interface\ProjectServiceInterface;
+use Psr\Log\LoggerInterface;
 use \Symfony\Component\HttpFoundation\Request;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -12,11 +12,14 @@ use Symfony\Component\Routing\Annotation\Route;
 
 class ProjectController extends AbstractController
 {
-    private ProjectServiceInterface $projectService;
+    private $projectService;
 
-    public function __construct(ProjectServiceInterface $projectService)
+    private $logger;
+
+    public function __construct(ProjectServiceInterface $projectService, LoggerInterface $logger)
     {
         $this->projectService = $projectService;
+        $this->logger = $logger;
     }
     #[Route('/api/projects', name: 'app_project', methods: ['GET'])]
     public function index(): JsonResponse
@@ -40,14 +43,12 @@ class ProjectController extends AbstractController
         try{
             $project = $this->projectService->create($apiData);
         } catch (\Exception $e) {
-            error_log($e->getMessage());
+            $this->logger->error($e->getMessage());
             return new JsonResponse($e->getMessage(), Response::HTTP_INTERNAL_SERVER_ERROR);
         }
 
-        $projectArray = $this->projectService->create($project);
-
         return $this->json([
-            'data' => $projectArray
+            'data' => $project
         ]);
     }
 
@@ -57,7 +58,7 @@ class ProjectController extends AbstractController
         try{
             $project = $this->projectService->get($id);
         } catch (\Exception $e) {
-            error_log($e->getMessage());
+            $this->logger->error($e->getMessage());
             return new JsonResponse($e->getMessage(), Response::HTTP_INTERNAL_SERVER_ERROR);
         }
 
@@ -78,7 +79,7 @@ class ProjectController extends AbstractController
         try{
             $projectArray = $this->projectService->update($id, $apiData);
         } catch (\Exception $e) {
-            error_log($e->getMessage());
+            $this->logger->error($e->getMessage());
             return new JsonResponse($e->getMessage(), Response::HTTP_INTERNAL_SERVER_ERROR);
         }
 
@@ -93,20 +94,10 @@ class ProjectController extends AbstractController
         try{
             $this->projectService->delete($id);
         } catch (\Exception $e) {
-            error_log($e->getMessage());
+            $this->logger->error($e->getMessage());
             return new JsonResponse($e->getMessage(), Response::HTTP_INTERNAL_SERVER_ERROR);
         }
 
         return new JsonResponse(null, Response::HTTP_NO_CONTENT);
-    }
-
-    private function translateProjectToArray(Project $task): array
-    {
-        return [
-            'id' => $task->getId(),
-            'title' => $task->getTitle(),
-            'created_at' => $task->getCreatedAt()->format('c'),
-            'updated_at' => $task->getUpdatedAt()->format('c'),
-        ];
     }
 }

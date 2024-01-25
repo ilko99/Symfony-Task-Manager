@@ -6,7 +6,6 @@ use App\Entity\Task;
 use App\Repository\ProjectRepository;
 use App\Repository\TaskRepository;
 use App\Service\Interface\ProjectServiceInterface;
-use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\EntityManagerInterface;
 
 class ProjectService implements ProjectServiceInterface
@@ -69,7 +68,7 @@ class ProjectService implements ProjectServiceInterface
 
         return [
             'project' => $this->translateProjectToArray($project),
-            'tasks' => array_map([$this, 'translateProjectToArray'], $tasks)
+            'tasks' => array_map([$this, 'translateTaskToArray'], $tasks)
         ];
     }
     public function update(int $id, array $projectData): array
@@ -110,6 +109,18 @@ class ProjectService implements ProjectServiceInterface
 
         $this->entityManager->remove($project);
         $this->entityManager->flush();
+    }
+
+    private function translateTaskToArray(Task $task): array
+    {
+        return [
+            'id' => $task->getId(),
+            'title' => $task->getTitle(),
+            'is_done' => $task->getIsDone(),
+            'created_at' => $task->getCreatedAt()->format('c'),
+            'updated_at' => $task->getUpdatedAt()->format('c'),
+            'creator_id' => $task->getCreator()->getId(),
+        ];
     }
 
     private function translateProjectToArray(Project $task): array

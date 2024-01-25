@@ -3,8 +3,6 @@
 namespace App\Entity;
 
 use App\Repository\TaskRepository;
-use Doctrine\Common\Collections\ArrayCollection;
-use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Validator\Constraints as Assert;
 
@@ -61,7 +59,7 @@ class Task
         return $this;
     }
 
-    public function isIsDone(): ?bool
+    public function getIsDone(): ?bool
     {
         return $this->is_done;
     }

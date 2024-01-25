@@ -32,23 +32,14 @@ class TaskService implements TaskServiceInterface
         try{
             $tasks = $this->taskRepository->findAll();
 
-            return array_map(function (Task $task){
-                return [
-                    'id' => $task->getId(),
-                    'title' => $task->getTitle(),
-                    'is_done' => $task->isIsDone(),
-                    'created_at' => $task->getCreatedAt() ? $task->getCreatedAt()->format('Y-m-d H:i:s') : null,
-                    'project_id' => $task->getProject() ? $task->getProject()->getId() : null,
-                    'creator_id' => $task->getCreator() ? $task->getCreator()->getId() : null,
-                ];
-            }, $tasks);
+            return array_map([$this, 'translateTaskToArray'],$tasks);
         } catch (\Exception $e) {
             echo $e->getMessage();
             return [];
         }
     }
 
-    public function createTasks(array $apiTask): Task
+    public function createTask(array $apiTask): array
     {
         $task = new Task();
 
@@ -92,10 +83,10 @@ class TaskService implements TaskServiceInterface
             echo $e->getMessage();
         }
 
-        return $task;
+        return $this->translateTaskToArray($task);
     }
 
-    public function getTask(int $id): ?Task
+    public function getTask(int $id): ?array
     {
         $task = $this->taskRepository->find($id);
 
@@ -104,10 +95,10 @@ class TaskService implements TaskServiceInterface
             throw new \Exception('Task not found');
         }
 
-        return $task;
+        return $this->translateTaskToArray($task);
     }
 
-    public function updateTask(int $id, array $taskData): ?Task
+    public function updateTask(int $id, array $taskData): ?array
     {
         $task = $this->taskRepository->find($id);
 
@@ -148,7 +139,7 @@ class TaskService implements TaskServiceInterface
 
         $this->entityManager->flush();
 
-        return $task;
+        return $this->translateTaskToArray($task);
     }
 
     public function deleteTask(int $id): void
@@ -172,6 +163,18 @@ class TaskService implements TaskServiceInterface
 
         $this->entityManager->remove($task);
         $this->entityManager->flush();
+    }
 
+    private function translateTaskToArray(Task $task): array
+    {
+        return [
+            'id' => $task->getId(),
+            'title' => $task->getTitle(),
+            'is_done' => $task->getIsDone(),
+            'created_at' => $task->getCreatedAt()->format('c'),
+            'updated_at' => $task->getUpdatedAt()->format('c'),
+            'project_id' => $task->getProject() ? $task->getProject()->getId() : null,
+            'creator_id' => $task->getCreator() ? $task->getCreator()->getId() : null,
+        ];
     }
 }

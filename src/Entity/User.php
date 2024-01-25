@@ -39,9 +39,14 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\OneToMany(mappedBy: 'user', targetEntity: ApiToken::class, orphanRemoval: true)]
     private Collection $apiTokens;
 
+    #[ORM\ManyToMany(targetEntity: Project::class, inversedBy: 'users')]
+    #[ORM\JoinTable(name: 'project_user')]
+    private ?Collection $projects;
+
     public function __construct()
     {
         $this->apiTokens = new ArrayCollection();
+        $this->projects = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -123,5 +128,32 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function getUserIdentifier(): string
     {
         return $this->email;
+    }
+
+    public function getProjects(): Collection
+    {
+        return $this->projects;
+    }
+
+    public function addProjects(Project $project): self
+    {
+        if(!$this->projects->removeElement($project))
+        {
+            $this->projects[] = $project;
+
+            $project->getUsers()->add($this);
+        }
+
+        return $this;
+    }
+
+    public function removeProject(Project $project): self
+    {
+        if($this->projects->removeElement($project))
+        {
+            $project->getUsers()->removeElement($this);
+        }
+
+        return $this;
     }
 }
